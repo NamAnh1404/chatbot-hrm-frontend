@@ -35,11 +35,11 @@ Tuy nhiên mức độ hoàn thiện chưa đồng đều:
 | Module | Mức hiện tại | Nhận xét |
 |---|---|---|
 | Đăng nhập | Demo frontend + backend có JWT | UI chưa nối login thật với API |
-| Nhân viên | Đã ghép API nhiều nhất | Hợp HRM, nhưng CCCD chưa lưu bền nếu DB thật chưa có cột |
-| Phòng ban/chức vụ | Có API danh mục | Chưa có quan hệ chức vụ thuộc phòng ban trong DB |
-| Chấm công | Có API check-in/check-out | Chưa tự sinh vắng mặt, chưa tính ca làm linh hoạt |
-| Nghỉ phép | Backend có API, frontend còn demo | Cần nối UI với API và thêm quỹ phép |
-| Lương thưởng | Backend có API đơn giản, frontend còn hard-code | Cần nối UI với API và lấy dữ liệu công/OT/phụ cấp |
+| Nhân viên | Đã ghép API và đọc được DB thật `chatbot_hrm` | Hợp HRM ở mức hồ sơ cơ bản, nhưng DB chưa có CCCD/lương/role trong bảng `employees` |
+| Phòng ban/chức vụ | Có API danh mục và đã map đúng schema thật | DB dùng `department_id/department_name`, `position_id/position_name` |
+| Chấm công | Có API check-in/check-out nhưng schema DB thật còn đơn giản | DB hiện có `attendance_id`, `work_date`, `check_in`, `check_out`; chưa có cột đi trễ/về sớm/trạng thái |
+| Nghỉ phép | Backend có API nhưng schema DB thật khác thiết kế cũ | DB hiện dùng `leave_type` dạng text, chưa có bảng `leave_types` |
+| Lương thưởng | Backend có API đơn giản, frontend còn hard-code | DB thật dùng bảng `salary`, chưa phải `payroll` như tài liệu cũ |
 | Đánh giá năng lực | Đã có API + UI + công thức điểm | Phù hợp để thể hiện AI hỗ trợ quyết định |
 | Chatbot | FAQ demo | Hỗ trợ hỏi đáp, chưa phải Agentic AI thật |
 | Dashboard | Hard-code | Cần lấy số liệu thật từ API |
@@ -128,14 +128,26 @@ Thông tin quan trọng:
 
 - Họ tên
 - Email đăng nhập
-- Mật khẩu
 - Số điện thoại
-- CCCD
 - Phòng ban
 - Chức vụ
-- Vai trò
-- Lương cơ bản
 - Trạng thái làm việc
+
+Trong DB thật hiện tại, bảng `employees` đang có các cột:
+
+```text
+employee_id
+user_id
+full_name
+email
+phone
+department_id
+position_id
+hire_date
+status
+```
+
+Các thông tin như `cccd`, `salary_base`, `role`, `password` **chưa nằm trực tiếp trong bảng `employees`**. Backend hiện đã tạm map các trường này theo dạng mặc định/không lưu bền để UI không lỗi.
 
 ### 5.2. Luồng thêm nhân viên
 
@@ -153,12 +165,10 @@ flowchart TD
 Logic hiện tại:
 
 - Frontend kiểm tra bắt buộc: họ tên, email, CCCD, phòng ban, chức vụ.
-- CCCD yêu cầu 12 chữ số.
-- Email và CCCD được kiểm tra trùng ở frontend.
+- CCCD đang là trường UI mong muốn, nhưng DB thật chưa có cột `cccd`, nên chưa lưu bền.
+- Email được kiểm tra trùng ở frontend/backend ở mức code.
 - Backend kiểm tra trùng email với DB thật.
-- Backend kiểm tra trùng email và CCCD trong dữ liệu demo fallback.
-- Nhân viên mới mặc định là `Đang làm việc`.
-- Mật khẩu mặc định là `123456`.
+- Nhân viên mới trên UI mặc định là `Đang làm việc`; backend chuyển sang `active` khi ghi xuống DB.
 
 Điểm hợp HRM:
 
@@ -169,10 +179,10 @@ Logic hiện tại:
 
 Điểm chưa hợp HRM hoặc cần chỉnh:
 
-- `CCCD` trong model backend đang `NotMapped`, nghĩa là nếu dùng MySQL thật mà chưa thêm cột `cccd`, CCCD sẽ không lưu bền vững.
+- `CCCD`, `salary_base`, `role` trong model backend hiện đang không map vào DB thật vì bảng `employees` chưa có các cột này.
 - Email nên unique ở database, không chỉ check trong code.
 - CCCD cũng nên unique ở database.
-- Mật khẩu mặc định cần hash trước khi lưu. Nếu frontend gửi `123456` dạng plain text mà backend lưu thẳng thì không đúng bảo mật.
+- Tài khoản đăng nhập thật nên liên kết qua bảng `users` thay vì lưu password trực tiếp trong `employees`.
 - Role `ADMIN` hoặc `Quản trị hệ thống` nên chỉ có một account hoặc được tạo bằng seed riêng, không cho tạo tự do từ form nhân viên.
 - Chuyển nghỉ việc nên lưu thêm ngày nghỉ việc và lý do nghỉ việc.
 
@@ -233,7 +243,12 @@ Ví dụ:
 
 - Backend có API lấy danh sách phòng ban.
 - Backend có API lấy danh sách chức vụ.
-- Frontend tự map chức vụ theo tên phòng ban bằng `fallbackPositionsByDepartment`.
+- Backend đã map đúng schema DB thật:
+  - `departments.department_id` -> `id`
+  - `departments.department_name` -> `name`
+  - `positions.position_id` -> `id`
+  - `positions.position_name` -> `title`
+- Frontend vẫn có fallback map chức vụ theo tên phòng ban để demo lựa chọn chức vụ.
 
 ### 6.3. Điểm cần chỉnh để hợp HRM
 
@@ -712,7 +727,7 @@ Dashboard nên lấy dữ liệu từ các module thật:
 | Nhân viên nghỉ việc | Employees status `Đã nghỉ việc` |
 | Nghỉ phép hôm nay | LeaveRequests `Đã duyệt` và ngày hiện tại nằm trong khoảng nghỉ |
 | Lương tháng | Payroll tháng/năm hiện tại |
-| Đi trễ hôm nay | Attendances có `IsLate = true` |
+| Đi trễ hôm nay | Bảng `attendance`, suy luận từ `check_in` nếu có quy định giờ vào |
 | Điểm năng lực TB | Competency dashboard |
 
 Luồng:
@@ -741,10 +756,9 @@ flowchart TD
 | employees | Hồ sơ nhân viên |
 | departments | Phòng ban |
 | positions | Chức vụ |
-| attendances | Chấm công |
+| attendance | Chấm công |
 | leave_requests | Đơn nghỉ phép |
-| leave_types | Loại nghỉ |
-| payroll | Bảng lương |
+| salary | Bảng lương |
 | competency_reviews | Kết quả đánh giá năng lực nên bổ sung |
 | chat_sessions | Phiên chat nên bổ sung |
 | chat_messages | Tin nhắn chat nên bổ sung |
@@ -756,10 +770,9 @@ erDiagram
     departments ||--o{ employees : has
     departments ||--o{ positions : has
     positions ||--o{ employees : has
-    employees ||--o{ attendances : has
+    employees ||--o{ attendance : has
     employees ||--o{ leave_requests : creates
-    leave_types ||--o{ leave_requests : categorizes
-    employees ||--o{ payroll : receives
+    employees ||--o{ salary : receives
     employees ||--o{ competency_reviews : evaluated
 ```
 
@@ -790,7 +803,7 @@ erDiagram
 - `reviewed_at`
 - `review_note`
 
-`payroll`:
+`salary`:
 
 - `work_days`
 - `overtime_hours`
@@ -923,4 +936,3 @@ Logic hiện tại **có nền HRM**, nhưng để hệ thống chặt chẽ hơ
 Với đồ án hiện tại, cách đặt tên phù hợp nhất là:
 
 **Xây dựng hệ thống quản trị nhân sự tích hợp Agentic AI đánh giá năng lực**
-

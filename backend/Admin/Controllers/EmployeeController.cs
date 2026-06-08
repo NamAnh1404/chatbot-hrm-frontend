@@ -67,7 +67,8 @@ namespace Admin.Controllers
             try
             {
                 var created = await _service.Create(employee);
-                return Ok(created);
+                var dto = await _service.GetById(created.Id);
+                return Ok(dto ?? new EmployeeDto { Id = created.Id });
             }
             catch (InvalidOperationException ex)
             {

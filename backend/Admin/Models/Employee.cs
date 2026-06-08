@@ -6,7 +6,7 @@ namespace Admin.Models
     [Table("employees")]
     public class Employee
     {
-        [Column("id")]
+        [Column("employee_id")]
         public int Id { get; set; }
 
         [Column("email")]
@@ -16,7 +16,7 @@ namespace Admin.Models
         public string Password { get; set; } = null!;
 
         [Column("role")]
-        public string Role { get; set; } = null!;
+        public string Role { get; set; } = "EMPLOYEE";
 
         // DB: full_name
         [Column("full_name")]
@@ -43,14 +43,14 @@ namespace Admin.Models
         public string Status { get; set; } = "Đang làm việc";
 
         // DB: created_at
-        [Column("created_at")]
+        [NotMapped]
         public DateTime? CreatedAt { get; set; }
 
         // DB KHÔNG CÓ
         [NotMapped]
         public string? Address { get; set; }
 
-        [NotMapped]
+        [Column("cccd")]
         public string? Cccd { get; set; }
 
         // Navigation (để join lấy tên phòng ban/chức vụ)

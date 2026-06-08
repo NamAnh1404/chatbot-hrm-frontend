@@ -33,20 +33,21 @@ namespace Admin.Data
                 entity.ToTable("employees");   // 👈 QUAN TRỌNG
                 entity.HasKey(e => e.Id);
 
-                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.Id).HasColumnName("employee_id");
 
                 entity.Property(e => e.Email).HasColumnName("email");
                 entity.Property(e => e.Password).HasColumnName("password");
                 entity.Property(e => e.Role).HasColumnName("role");
                 entity.Property(e => e.FullName).HasColumnName("full_name");
                 entity.Property(e => e.Phone).HasColumnName("phone");
+                entity.Property(e => e.Cccd).HasColumnName("cccd");
                 entity.Property(e => e.Status).HasColumnName("status");
 
                 // ✅ BỔ SUNG ĐẦY ĐỦ THEO MYSQL
                 entity.Property(e => e.DepartmentId).HasColumnName("department_id");
                 entity.Property(e => e.PositionId).HasColumnName("position_id");
                 entity.Property(e => e.SalaryBase).HasColumnName("salary_base");
-                entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+                entity.Ignore(e => e.CreatedAt);
             });
 
             // =========================
@@ -57,9 +58,9 @@ namespace Admin.Data
                 entity.ToTable("departments");
                 entity.HasKey(d => d.Id);
 
-                entity.Property(d => d.Id).HasColumnName("id");
-                entity.Property(d => d.Name).HasColumnName("name");
-                entity.Property(d => d.Description).HasColumnName("description");
+                entity.Property(d => d.Id).HasColumnName("department_id");
+                entity.Property(d => d.Name).HasColumnName("department_name");
+                entity.Ignore(d => d.Description);
             });
 
             // =========================
@@ -70,9 +71,9 @@ namespace Admin.Data
                 entity.ToTable("positions");
                 entity.HasKey(p => p.Id);
 
-                entity.Property(p => p.Id).HasColumnName("id");
-                entity.Property(p => p.Title).HasColumnName("title");
-                entity.Property(p => p.BaseSalaryRange).HasColumnName("base_salary_range");
+                entity.Property(p => p.Id).HasColumnName("position_id");
+                entity.Property(p => p.Title).HasColumnName("position_name");
+                entity.Ignore(p => p.BaseSalaryRange);
             });
 
             // =========================
@@ -93,19 +94,23 @@ namespace Admin.Data
             // =========================
             modelBuilder.Entity<Attendance>(entity =>
             {
-                entity.ToTable("attendances");
+                entity.ToTable("attendance");
                 entity.HasKey(x => x.Id);
 
-                entity.Property(x => x.Id).HasColumnName("id");
+                entity.Property(x => x.Id).HasColumnName("attendance_id");
                 entity.Property(x => x.EmployeeId).HasColumnName("employee_id");
-                entity.Property(x => x.Date).HasColumnName("date");
+                entity.Property(x => x.Date).HasColumnName("work_date");
 
-                entity.Property(x => x.CheckInTime).HasColumnName("check_in_time");
-                entity.Property(x => x.CheckOutTime).HasColumnName("check_out_time");
+                entity.Property(x => x.CheckInTime).HasColumnName("check_in");
+                entity.Property(x => x.CheckOutTime).HasColumnName("check_out");
 
-                entity.Property(x => x.IsLate).HasColumnName("is_late");
-                entity.Property(x => x.IsEarlyLeave).HasColumnName("is_early_leave");
-                entity.Property(x => x.Status).HasColumnName("status");
+                entity.Ignore(x => x.TotalHours);
+                entity.Ignore(x => x.IsLate);
+                entity.Ignore(x => x.IsEarlyLeave);
+                entity.Ignore(x => x.Note);
+                entity.Ignore(x => x.Status);
+                entity.Ignore(x => x.CreatedAt);
+                entity.Ignore(x => x.UpdatedAt);
             });
         }
     }

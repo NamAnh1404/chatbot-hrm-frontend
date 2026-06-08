@@ -77,7 +77,7 @@ chatbot-hrm-react-typescript
 
 ### AI/Chatbot
 
-Frontend hiện có module chatbot gọi API backend qua HTTP. Tuy nhiên hiện tại phần AI mới ở mức chatbot/trợ lý hỏi đáp, chưa thể hiện đầy đủ mô hình Agentic AI.
+Frontend hiện có module AI Assistant/chatbot gọi API backend qua HTTP. Ngoài chatbot hỏi đáp theo rule, dự án đã bổ sung module **Đánh giá năng lực** để thể hiện phần AI phân tích dữ liệu nhân sự.
 
 ## 4. Đánh giá hiện trạng frontend
 
@@ -103,7 +103,9 @@ Các module đáng chú ý:
 
 Frontend hiện vẫn mang tính demo nhiều hơn sản phẩm hoàn chỉnh:
 
-- Dữ liệu phần lớn đang hard-code trong component.
+- Một số module vẫn hard-code dữ liệu trong component.
+- Module Quản lý nhân viên đã gọi API backend và đọc được database thật `chatbot_hrm`.
+- Module Đánh giá năng lực đã gọi API backend, nhưng vẫn có fallback demo nếu API không có dữ liệu.
 - Các thao tác thêm/sửa/xóa chủ yếu dùng `alert` và `confirm`.
 - Đăng nhập đang dùng tài khoản demo hard-code.
 - Một số route chưa hoàn thiện:
@@ -169,24 +171,23 @@ http://localhost:5297
 
 ### Hạn chế/rủi ro
 
-- Frontend chatbot hiện đang gọi `http://localhost:8000`, trong khi backend mới chạy `http://localhost:5297`.
-- Cần kiểm tra lại API thực tế có khớp với frontend hay chưa.
-- File cấu hình backend đang chứa connection string/JWT secret, không nên public khi nộp hoặc đẩy GitHub.
-- Cần tách cấu hình nhạy cảm sang biến môi trường hoặc `appsettings.Development.json` không commit.
-- Chưa thấy migration/database seed rõ ràng trong phân tích nhanh.
-- Cần kiểm tra API có hỗ trợ đầy đủ các nghiệp vụ mà frontend đang hiển thị hay chưa.
+- Frontend đang dùng `NEXT_PUBLIC_API_BASE_URL` hoặc mặc định `http://localhost:5297`.
+- Backend đã đọc được database local `chatbot_hrm` cho module nhân viên, phòng ban và chức vụ.
+- Schema DB thật khác schema thiết kế ban đầu, nên backend đã phải map:
+  - `employee_id` thay cho `id`
+  - `department_name` thay cho `name`
+  - `position_name` thay cho `title`
+- Một số cột UI mong muốn như `cccd`, `salary_base`, `role` chưa có trong bảng `employees`.
+- Cần tiếp tục đồng bộ schema cho lương, nghỉ phép, chấm công và đăng nhập.
+- File cấu hình thật không nên public khi nộp hoặc đẩy GitHub; nên dùng biến môi trường cho mật khẩu DB/JWT secret.
 
 ## 6. Hệ thống hiện tại nên được gọi là gì?
 
-Với code hiện tại, tên chính xác hơn là:
+Với code hiện tại, tên phù hợp là:
 
-**Hệ thống quản trị nhân sự HRM tích hợp AI Chatbot hỗ trợ nhân viên**
+**Hệ thống quản trị nhân sự tích hợp Agentic AI đánh giá năng lực**
 
-Hoặc:
-
-**Hệ thống quản trị nhân sự tích hợp chatbot hỗ trợ tra cứu và tư vấn nghiệp vụ nhân sự**
-
-Không nên gọi là Agentic AI hoàn chỉnh nếu chưa bổ sung chức năng AI phân tích và ra quyết định.
+Lý do: hệ thống đã có module Đánh giá năng lực tự lấy dữ liệu nhân viên/chấm công, tính điểm, xếp loại và sinh khuyến nghị cho HR. Tuy nhiên đây vẫn là **Agentic AI mô phỏng theo rule-based logic**, chưa phải AI Agent hoàn chỉnh dùng mô hình AI thật.
 
 ## 7. Agentic AI là gì?
 
@@ -512,7 +513,7 @@ backend/Admin
 
 - Hoàn thiện các page trống/bản nháp.
 - Đưa API base vào `.env`.
-- Sửa chatbot từ `localhost:8000` sang đúng API backend hoặc endpoint AI riêng.
+- Duy trì `NEXT_PUBLIC_API_BASE_URL` để frontend gọi đúng backend `http://localhost:5297` hoặc URL deploy.
 - Thay đăng nhập hard-code bằng API login.
 - Thay dữ liệu hard-code bằng API thật.
 - Tách component quá dài.
@@ -573,7 +574,7 @@ Swagger thường ở:
 http://localhost:5297/swagger
 ```
 
-Lưu ý: môi trường phân tích hiện tại chưa chạy được `npm run build` vì máy không nhận `npm` trong PATH và chưa có `node_modules`. Cần kiểm tra lại trên máy có Node.js/npm đầy đủ.
+Lưu ý: frontend đã build được bằng Next.js trong môi trường hiện tại. Backend cũng build được, còn một số warning nullable cũ nhưng không chặn chạy.
 
 ## 17. Phân chia nhiệm vụ cho 4 người
 
@@ -718,7 +719,6 @@ Lưu ý: môi trường phân tích hiện tại chưa chạy được `npm run 
 
 Đồ án hiện tại đã có nền tảng giao diện HRM khá rộng, phù hợp để phát triển thành một hệ thống quản trị nhân sự hoàn chỉnh. Tuy nhiên, phần lớn chức năng hiện vẫn đang ở mức demo frontend, dữ liệu hard-code và thao tác giả lập. Backend đã được đưa vào cùng workspace nhưng cần kiểm tra, nối API và đồng bộ với frontend.
 
-Nếu nhóm chỉ giữ chức năng hiện tại, tên phù hợp nhất là hệ thống HRM tích hợp AI Chatbot. Nếu muốn dùng tên Agentic AI, cần bổ sung ít nhất các chức năng AI phân tích nghỉ phép, phát hiện bất thường chấm công và đưa khuyến nghị nhân sự có giải thích.
+Với chức năng hiện tại, tên **Hệ thống quản trị nhân sự tích hợp Agentic AI đánh giá năng lực** đã phù hợp ở mức đồ án demo, vì có module đánh giá năng lực tự phân tích dữ liệu và đưa khuyến nghị. Nếu muốn nâng cấp mạnh hơn, có thể bổ sung thêm AI phân tích nghỉ phép, phát hiện bất thường chấm công và lưu lịch sử khuyến nghị nhân sự.
 
 Hướng phát triển hợp lý nhất là không làm lại từ đầu, mà giữ nền frontend/backend hiện tại, sau đó bổ sung tầng AI Agent và cải thiện kết nối dữ liệu thật.
-

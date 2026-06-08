@@ -5,13 +5,13 @@ namespace Admin.Models
     [Table("positions")]
     public class Position
     {
-        [Column("id")]
+        [Column("position_id")]
         public int Id { get; set; }
 
-        [Column("title")]
+        [Column("position_name")]
         public string Title { get; set; } = null!;
 
-        [Column("base_salary_range")]
+        [NotMapped]
         public string? BaseSalaryRange { get; set; }
 
         public ICollection<Employee> Employees { get; set; } = new List<Employee>();

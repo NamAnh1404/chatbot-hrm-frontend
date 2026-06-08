@@ -62,11 +62,11 @@ namespace Admin.Services
                     {
                         Id = e.Id,
                         Email = e.Email,
-                        Role = e.Role,
+                        Role = string.IsNullOrWhiteSpace(e.Role) ? "EMPLOYEE" : e.Role,
                         FullName = e.FullName,
                         Phone = e.Phone,
-                        Cccd = null,
-                        Status = e.Status,
+                        Cccd = e.Cccd,
+                        Status = ToApiStatus(e.Status),
 
                         DepartmentId = e.DepartmentId,
                         DepartmentName = e.Department != null ? e.Department.Name : null,
@@ -74,7 +74,7 @@ namespace Admin.Services
                         PositionId = e.PositionId,
                         PositionTitle = e.Position != null ? e.Position.Title : null,
 
-                        SalaryBase = e.SalaryBase
+                        SalaryBase = e.SalaryBase ?? 0
                     })
                     .ToListAsync();
             }
@@ -101,11 +101,11 @@ namespace Admin.Services
                     {
                         Id = e.Id,
                         Email = e.Email,
-                        Role = e.Role,
+                        Role = string.IsNullOrWhiteSpace(e.Role) ? "EMPLOYEE" : e.Role,
                         FullName = e.FullName,
                         Phone = e.Phone,
-                        Cccd = null,
-                        Status = e.Status,
+                        Cccd = e.Cccd,
+                        Status = ToApiStatus(e.Status),
 
                         DepartmentId = e.DepartmentId,
                         DepartmentName = e.Department != null ? e.Department.Name : null,
@@ -113,7 +113,7 @@ namespace Admin.Services
                         PositionId = e.PositionId,
                         PositionTitle = e.Position != null ? e.Position.Title : null,
 
-                        SalaryBase = e.SalaryBase
+                        SalaryBase = e.SalaryBase ?? 0
                     })
                     .FirstOrDefaultAsync();
             }
@@ -137,12 +137,24 @@ namespace Admin.Services
 
             if (string.IsNullOrWhiteSpace(employee.Status))
                 employee.Status = "Đang làm việc";
+            employee.Status = ToDbStatus(employee.Status);
+            employee.Role = NormalizeRole(employee.Role);
+            employee.Password = NormalizePassword(employee.Password);
 
             try
             {
                 var emailExists = await _db.Employees.AnyAsync(e => e.Email == employee.Email);
                 if (emailExists)
                     throw new InvalidOperationException("Email này đã tồn tại trong hệ thống.");
+
+                var normalizedCccd = employee.Cccd?.Trim();
+                if (!string.IsNullOrWhiteSpace(normalizedCccd))
+                {
+                    var cccdExists = await _db.Employees.AnyAsync(e => e.Cccd == normalizedCccd);
+                    if (cccdExists)
+                        throw new InvalidOperationException("CCCD này đã tồn tại trong hệ thống.");
+                    employee.Cccd = normalizedCccd;
+                }
 
                 _db.Employees.Add(employee);
                 await _db.SaveChangesAsync();
@@ -197,15 +209,23 @@ namespace Admin.Services
                     throw new InvalidOperationException("Email này đã tồn tại trong hệ thống.");
 
                 existing.Email = dto.Email;
-                existing.Role = dto.Role;
+                existing.Role = NormalizeRole(dto.Role);
 
                 existing.FullName = dto.FullName;
                 existing.Phone = dto.Phone;
-                existing.Cccd = dto.Cccd;
+                var normalizedCccd = dto.Cccd?.Trim();
+                if (!string.IsNullOrWhiteSpace(normalizedCccd))
+                {
+                    var cccdExists = await _db.Employees.AnyAsync(e => e.Id != id && e.Cccd == normalizedCccd);
+                    if (cccdExists)
+                        throw new InvalidOperationException("CCCD này đã tồn tại trong hệ thống.");
+                }
+
+                existing.Cccd = normalizedCccd;
 
                 existing.Status = string.IsNullOrWhiteSpace(dto.Status)
                     ? existing.Status
-                    : dto.Status;
+                    : ToDbStatus(dto.Status);
 
                 existing.DepartmentId = dto.DepartmentId;
                 existing.PositionId = dto.PositionId;
@@ -225,7 +245,7 @@ namespace Admin.Services
                     EnsureDemoUnique(dto.Email, dto.Cccd, id);
 
                     existing.Email = dto.Email;
-                    existing.Role = dto.Role;
+                    existing.Role = NormalizeRole(dto.Role);
                     existing.FullName = dto.FullName;
                     existing.Phone = dto.Phone;
                     existing.Cccd = dto.Cccd;
@@ -252,7 +272,7 @@ namespace Admin.Services
                 if (emp == null)
                     return false;
 
-                emp.Status = "Đã nghỉ việc";
+                emp.Status = ToDbStatus("Đã nghỉ việc");
                 await _db.SaveChangesAsync();
                 return true;
             }
@@ -377,6 +397,64 @@ namespace Admin.Services
                 14 => "Accountant",
                 _ => null
             };
+        }
+
+        private static string ToApiStatus(string? status)
+        {
+            if (string.IsNullOrWhiteSpace(status)) return "Đang làm việc";
+
+            return status.Trim().ToLowerInvariant() switch
+            {
+                "active" => "Đang làm việc",
+                "inactive" => "Đã nghỉ việc",
+                "đã nghỉ việc" => "Đã nghỉ việc",
+                "da nghi viec" => "Đã nghỉ việc",
+                _ => status
+            };
+        }
+
+        private static string ToDbStatus(string? status)
+        {
+            if (string.IsNullOrWhiteSpace(status)) return "active";
+
+            return status.Trim().ToLowerInvariant() switch
+            {
+                "đang làm việc" => "active",
+                "dang lam viec" => "active",
+                "active" => "active",
+                "đã nghỉ việc" => "inactive",
+                "da nghi viec" => "inactive",
+                "inactive" => "inactive",
+                _ => status
+            };
+        }
+
+        private static string NormalizeRole(string? role)
+        {
+            if (string.IsNullOrWhiteSpace(role)) return "EMPLOYEE";
+
+            return role.Trim().ToUpperInvariant() switch
+            {
+                "MANAGER" => "MANAGER",
+                "QUẢN LÝ" => "MANAGER",
+                "QUAN LY" => "MANAGER",
+                _ => "EMPLOYEE"
+            };
+        }
+
+        private static string NormalizePassword(string? password)
+        {
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                return BCrypt.Net.BCrypt.HashPassword("123456");
+            }
+
+            if (password.StartsWith("$2a$") || password.StartsWith("$2b$") || password.StartsWith("$2y$"))
+            {
+                return password;
+            }
+
+            return BCrypt.Net.BCrypt.HashPassword(password);
         }
     }
 }

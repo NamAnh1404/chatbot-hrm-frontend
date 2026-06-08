@@ -210,7 +210,7 @@ Backend lấy dữ liệu từ các bảng:
 employees
 departments
 positions
-attendances
+attendance
 ```
 
 Dữ liệu nhân viên dùng để biết:
@@ -220,12 +220,22 @@ Dữ liệu nhân viên dùng để biết:
 - Giữ chức vụ gì
 - Trạng thái còn làm việc hay không
 
-Dữ liệu chấm công dùng để biết:
+Dữ liệu chấm công trong DB thật hiện nằm ở bảng `attendance` với các cột chính:
 
-- Nhân viên có đi trễ không
-- Có về sớm không
-- Có hoàn thành ngày công không
-- Tổng số ngày công trong tháng
+- `attendance_id`
+- `employee_id`
+- `work_date`
+- `check_in`
+- `check_out`
+
+Từ dữ liệu này hệ thống có thể biết:
+
+- Nhân viên có bản ghi chấm công trong tháng hay không
+- Nhân viên có giờ check-in/check-out hay không
+- Có thể suy luận đi trễ/về sớm nếu bổ sung logic so sánh giờ
+- Tổng số ngày có bản ghi chấm công trong tháng
+
+Các cột như `is_late`, `is_early_leave`, `status`, `total_hours` hiện chưa có trong DB thật CDIO4. Backend đã tạm bỏ map các cột này để tránh lỗi schema. Nếu muốn đánh giá chuyên cần/kỷ luật chính xác hơn, nên bổ sung các cột này hoặc tính trực tiếp từ `check_in/check_out`.
 
 ### Bước 4. Backend tính điểm chuyên cần
 
