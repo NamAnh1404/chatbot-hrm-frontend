@@ -305,6 +305,7 @@ AI không nên tự quyết định cuối cùng các vấn đề nhân sự. H�
 | Chatbot | Có | Cần gọi dữ liệu thật và phân tích |
 | AI phân tích | Chưa rõ | Cần thêm AI Insights |
 | AI đề xuất quyết định | Chưa có | Cần thêm recommendation engine |
+| Nguồn dữ liệu hiệu suất | Chưa có task/KPI thật | Cần Manager giao task, Employee cập nhật tiến độ, Manager review |
 | Human-in-the-loop | Chưa có | Cần nút duyệt/từ chối đề xuất AI |
 | Lịch sử AI | Chưa có | Cần lưu log phân tích/đề xuất |
 | Backend API đồng bộ FE | Chưa chắc | Cần nối API thật |
@@ -313,6 +314,27 @@ AI không nên tự quyết định cuối cùng các vấn đề nhân sự. H�
 ## 10. Chức năng nên bổ sung để nâng cấp thành Agentic AI
 
 Nhóm nên chọn một số chức năng vừa sức, không nên làm quá rộng.
+
+### Chức năng nền: Manager giao task cho nhân viên
+
+Mục tiêu:
+
+- Tạo nguồn dữ liệu thật cho tiêu chí hiệu suất.
+- Cho Manager có vai trò trực tiếp trong đánh giá nhân viên.
+- Cho Employee cập nhật tiến độ công việc.
+- Cho AI có dữ liệu task để phân tích năng lực.
+
+Luồng:
+
+```text
+Manager giao task
+Employee cập nhật tiến độ
+Manager review/chấm chất lượng
+AI tổng hợp task + chấm công + nghỉ phép
+AI đánh giá năng lực và đề xuất hành động
+```
+
+Chức năng này là nền tảng cho module đánh giá năng lực, vì KPI/hiệu suất không nên do AI tự sinh.
 
 ### Chức năng 1: AI phân tích nghỉ phép
 
@@ -396,6 +418,30 @@ HR duyệt/từ chối đề xuất
 Lưu lịch sử quyết định
 ```
 
+Luồng Agentic AI theo hướng mới của module đánh giá năng lực:
+
+```text
+Manager giao task cho nhân viên
+        ↓
+Employee nhận task và cập nhật tiến độ
+        ↓
+Manager review task, duyệt/chấm chất lượng
+        ↓
+AI Agent lấy dữ liệu task, chấm công, nghỉ phép, phòng ban, chức vụ
+        ↓
+AI Agent tính điểm chuyên cần, hiệu suất task, kỹ năng/chất lượng, kỷ luật/trách nhiệm
+        ↓
+AI Agent xếp loại năng lực và tạo nhận xét
+        ↓
+AI Agent đề xuất hành động: đào tạo, mentoring, khen thưởng, theo dõi
+        ↓
+Manager/HR duyệt kết quả cuối cùng
+        ↓
+Lưu lịch sử đánh giá năng lực
+```
+
+Luồng này hợp lý hơn vì KPI/hiệu suất có nguồn rõ ràng từ task do Manager giao, không phải AI tự suy đoán.
+
 ## 12. API cần đồng bộ giữa frontend và backend
 
 Frontend hiện cần các nhóm API sau:
@@ -429,6 +475,17 @@ Frontend hiện cần các nhóm API sau:
 - `POST /api/attendance/requests`
 - `PUT /api/attendance/requests/{id}/approve`
 - `PUT /api/attendance/requests/{id}/reject`
+
+### Task/Manager
+
+- `GET /api/manager/employees`
+- `GET /api/manager/tasks`
+- `POST /api/manager/tasks`
+- `PUT /api/manager/tasks/{id}`
+- `POST /api/manager/tasks/{id}/review`
+- `GET /api/employee/tasks`
+- `POST /api/employee/tasks/{id}/progress`
+- `POST /api/employee/tasks/{id}/submit`
 
 ### Salary
 
@@ -578,47 +635,56 @@ Lưu ý: frontend đã build được bằng Next.js trong môi trường hiện
 
 ## 17. Phân chia nhiệm vụ cho 4 người
 
-| Thành viên | Vai trò | Nhiệm vụ |
+| Thành viên | Vai trò chính | Phụ trách |
 |---|---|---|
-| Người 1 | Frontend Admin | Dashboard admin, quản lý nhân viên, lương, nghỉ phép, duyệt chấm công, báo cáo |
-| Người 2 | Frontend Employee | Cổng nhân viên, chấm công, xin nghỉ phép, xem lương, hồ sơ cá nhân, chatbot UI |
-| Người 3 | Backend + Database | Auth/JWT, API nhân viên, lương, nghỉ phép, chấm công, database, Swagger |
-| Người 4 | AI + Tài liệu + Demo | AI chatbot/Agentic AI, AI insights, báo cáo, slide, README, kịch bản demo |
+| TV1 | Frontend Admin + Manager | Giao diện Admin/HR, Dashboard, quản lý nhân viên, lương, nghỉ phép, đánh giá năng lực phía quản lý |
+| TV2 | Backend + Database | API, MySQL, Auth/JWT, nhân viên, phòng ban, chức vụ, nghỉ phép, chấm công, lương |
+| TV3 | Agentic AI + Logic nghiệp vụ | Module đánh giá năng lực, công thức tính điểm, AI nhận xét, AI đề xuất hành động, chatbot/AI Assistant |
+| TV4 | Frontend Employee + Document | Giao diện nhân viên, hồ sơ cá nhân, chấm công cá nhân, xin nghỉ phép, xem lương, viết báo cáo, slide, tài liệu demo |
 
-### Chi tiết nhiệm vụ Người 1
+Nói ngắn gọn:
 
-- Hoàn thiện giao diện admin.
-- Nối API cho danh sách nhân viên.
-- Nối API cho lương, nghỉ phép, chấm công.
-- Làm dashboard tổng quan.
-- Hiển thị AI Insights trong dashboard nếu có.
+- TV1: làm frontend cho bên Admin/Manager.
+- TV2: làm Backend + Database.
+- TV3: làm Agentic AI + xử lý nghiệp vụ đánh giá năng lực.
+- TV4: làm frontend cho bên Employee + tài liệu/báo cáo/slide.
 
-### Chi tiết nhiệm vụ Người 2
+Cách chia này hợp lý hơn vì TV1 và TV4 đều làm frontend nhưng tách rõ:
 
-- Hoàn thiện giao diện nhân viên.
-- Làm chấm công, xin nghỉ phép, xem lương.
-- Làm hồ sơ cá nhân.
-- Hoàn thiện chatbot UI.
-- Kiểm tra responsive.
+- TV1 làm màn hình quản trị và quản lý.
+- TV4 làm màn hình nhân viên và tài liệu.
 
-### Chi tiết nhiệm vụ Người 3
+### Chi tiết nhiệm vụ TV1
+
+- Hoàn thiện giao diện Admin/HR.
+- Làm giao diện Manager: dashboard phòng ban, nhân viên phòng ban, quản lý task, duyệt task, đánh giá năng lực.
+- Nối API cho danh sách nhân viên, lương, nghỉ phép, chấm công.
+- Hiển thị dữ liệu AI đánh giá năng lực ở phía quản lý.
+
+### Chi tiết nhiệm vụ TV2
 
 - Chạy và kiểm tra backend.
 - Thiết kế database.
-- Hoàn thiện API.
-- Tích hợp JWT.
-- Xử lý role admin/employee.
-- Viết seed data.
-- Kiểm tra Swagger.
+- Hoàn thiện API nhân viên, phòng ban, chức vụ, nghỉ phép, chấm công, lương.
+- Tích hợp JWT và phân quyền.
+- Viết seed data và kiểm tra Swagger.
+- Chuẩn bị API/task schema để phục vụ đánh giá năng lực nếu nhóm triển khai.
 
-### Chi tiết nhiệm vụ Người 4
+### Chi tiết nhiệm vụ TV3
 
 - Định nghĩa Agentic AI trong đồ án.
-- Làm module AI phân tích dữ liệu.
-- Tạo API recommendation.
-- Viết phần giải thích khuyến nghị.
-- Viết tài liệu báo cáo.
-- Chuẩn bị slide và kịch bản demo.
+- Thiết kế logic nghiệp vụ đánh giá năng lực.
+- Đề xuất luồng Manager giao task, Employee cập nhật tiến độ, Manager review task.
+- Xây dựng công thức tính điểm từ task, chấm công, nghỉ phép và review của Manager.
+- Viết nhận xét AI, đề xuất hành động cho HR/Manager.
+- Phân tích giới hạn hiện tại: phần AI đang rule-based, chưa phải AI Agent hoàn chỉnh.
+
+### Chi tiết nhiệm vụ TV4
+
+- Hoàn thiện giao diện Employee.
+- Làm hồ sơ cá nhân, chấm công cá nhân, xin nghỉ phép, xem lương.
+- Nếu triển khai task: làm màn hình Task của tôi, cập nhật tiến độ, gửi hoàn thành.
+- Viết tài liệu báo cáo, slide, README và kịch bản demo.
 
 ## 18. Lộ trình thực hiện đề xuất
 
@@ -695,11 +761,13 @@ Lưu ý: frontend đã build được bằng Next.js trong môi trường hiện
 
 ### Demo 6: AI Chatbot/Agentic AI
 
-1. Mở chatbot HR.
-2. Hỏi thông tin nhân sự.
-3. Yêu cầu AI phân tích nghỉ phép/chấm công.
-4. AI đưa khuyến nghị.
-5. HR xem lý do và quyết định chấp nhận/từ chối.
+1. Manager giao task cho nhân viên trong phòng ban.
+2. Nhân viên cập nhật tiến độ và gửi hoàn thành.
+3. Manager review task, chấm chất lượng và duyệt kết quả.
+4. Mở module Đánh giá năng lực.
+5. AI tổng hợp dữ liệu task, chấm công, nghỉ phép, phòng ban và chức vụ.
+6. AI tính điểm năng lực, xếp loại và đưa khuyến nghị.
+7. Manager/HR xem lý do và quyết định chấp nhận/chỉnh sửa/từ chối.
 
 ## 20. Tiêu chí đánh giá đồ án
 

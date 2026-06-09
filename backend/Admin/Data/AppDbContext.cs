@@ -36,7 +36,7 @@ namespace Admin.Data
                 entity.Property(e => e.Id).HasColumnName("employee_id");
 
                 entity.Property(e => e.Email).HasColumnName("email");
-                entity.Property(e => e.Password).HasColumnName("password");
+                entity.Property(e => e.Password).HasColumnName("password").IsRequired(false);
                 entity.Property(e => e.Role).HasColumnName("role");
                 entity.Property(e => e.FullName).HasColumnName("full_name");
                 entity.Property(e => e.Phone).HasColumnName("phone");

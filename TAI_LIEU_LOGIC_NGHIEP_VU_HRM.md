@@ -459,6 +459,15 @@ Mục tiêu:
 - Nêu điểm mạnh, điểm cần cải thiện
 - Đưa khuyến nghị cho HR
 
+Định hướng nghiệp vụ mới của module là **không để AI tự bịa KPI**. Hiệu suất và kỹ năng nên lấy từ dữ liệu có nguồn rõ ràng:
+
+- Task do Manager giao.
+- Tiến độ task do Employee cập nhật.
+- Kết quả review/chấm chất lượng do Manager xác nhận.
+- Dữ liệu chấm công và nghỉ phép từ hệ thống HRM.
+
+Như vậy AI chỉ đóng vai trò tổng hợp và đề xuất, còn Manager/HR vẫn là người xác nhận cuối cùng.
+
 ### 10.2. Nguồn dữ liệu
 
 Backend `CompetencyService` đang lấy:
@@ -475,6 +484,17 @@ Hiện chưa lấy:
 - Đánh giá của quản lý
 - Dữ liệu đào tạo
 - Kỷ luật/vi phạm nội quy ngoài chấm công
+
+Theo hướng nghiệp vụ mới, cần bổ sung thêm nguồn dữ liệu task:
+
+- Task được giao cho nhân viên.
+- Deadline của task.
+- Phần trăm tiến độ do nhân viên cập nhật.
+- Trạng thái task: mới, đang làm, chờ duyệt, hoàn thành, yêu cầu sửa, quá hạn.
+- Điểm chất lượng task do Manager chấm.
+- Nhận xét của Manager sau khi review task.
+
+Các dữ liệu này giúp tiêu chí hiệu suất có nguồn rõ ràng, thay vì chỉ mô phỏng.
 
 ### 10.3. Công thức hiện tại
 
@@ -496,6 +516,25 @@ TotalScore =
 + SkillScore * 0.20
 + DisciplineScore * 0.15
 ```
+
+Công thức trên là công thức hiện tại trong bản demo. Nếu phát triển theo hướng Manager giao task, công thức nên đổi thành:
+
+```text
+TotalScore =
+  AttendanceScore * 0.20
++ TaskPerformanceScore * 0.40
++ QualitySkillScore * 0.25
++ DisciplineResponsibilityScore * 0.15
+```
+
+Ý nghĩa:
+
+| Nhóm điểm mới | Nguồn dữ liệu | Ý nghĩa |
+|---|---|---|
+| Chuyên cần | Chấm công, nghỉ phép hợp lệ | Nhân viên có đi làm đều và đúng quy định không |
+| Hiệu suất task | Task hoàn thành, đúng hạn, tiến độ | Nhân viên xử lý công việc được giao tốt không |
+| Kỹ năng/chất lượng | Điểm Manager chấm khi review task | Chất lượng đầu ra và kỹ năng chuyên môn |
+| Kỷ luật/trách nhiệm | Deadline, cập nhật tiến độ, phản hồi task, chấm công | Mức độ trách nhiệm và tuân thủ quy trình |
 
 ### 10.4. Cách tính từng điểm
 
@@ -533,6 +572,23 @@ Sau đó cộng/trừ theo điểm chuyên cần:
 
 Điểm này hợp để demo, nhưng chưa phải hiệu suất thật.
 
+Hướng đúng hơn là lấy hiệu suất từ task:
+
+```text
+TaskPerformanceScore =
+  tỷ lệ task hoàn thành * 50%
++ điểm đúng hạn * 30%
++ điểm cập nhật tiến độ * 20%
+```
+
+Ví dụ:
+
+- Hoàn thành 4/5 task trong kỳ.
+- Có 3 task đúng hạn.
+- Có cập nhật tiến độ đầy đủ.
+
+Khi đó điểm hiệu suất không còn là số mô phỏng, mà xuất phát từ công việc Manager giao.
+
 #### Điểm kỹ năng
 
 Hệ thống dựa vào tên chức vụ và phòng ban:
@@ -543,6 +599,20 @@ Hệ thống dựa vào tên chức vụ và phòng ban:
 - Sales/Marketing: cộng điểm
 
 Đây là rule-based, chưa phải đánh giá kỹ năng thật.
+
+Nếu có task, điểm kỹ năng nên lấy thêm từ điểm chất lượng task do Manager review:
+
+```text
+QualitySkillScore = trung bình quality_score của các task đã được Manager duyệt/review
+```
+
+Ví dụ:
+
+- Task 1: 85 điểm chất lượng.
+- Task 2: 90 điểm chất lượng.
+- Task 3: 80 điểm chất lượng.
+
+Điểm kỹ năng/chất lượng = 85.
 
 #### Điểm kỷ luật
 
@@ -563,6 +633,15 @@ Lỗi chấm công gồm:
 - Đi trễ
 - Về sớm
 - Trạng thái khác `Completed`
+
+Theo hướng task, kỷ luật/trách nhiệm cần tính thêm:
+
+- Task quá hạn.
+- Task không cập nhật tiến độ.
+- Task bị Manager từ chối hoàn thành.
+- Chậm phản hồi task.
+
+Nhưng nếu nhân viên có nghỉ phép được duyệt trong thời gian làm task thì không nên phạt deadline nặng. Hệ thống cần liên kết nghỉ phép với task để tránh đánh giá sai.
 
 ### 10.5. Xếp loại
 
@@ -592,6 +671,26 @@ flowchart TD
     M --> N["Frontend hiển thị bảng điểm và nhận xét"]
 ```
 
+Luồng nghiệp vụ mới theo hướng Manager giao task:
+
+```mermaid
+flowchart TD
+    A["Manager chọn nhân viên phòng ban mình"] --> B["Manager giao task, deadline, độ ưu tiên"]
+    B --> C["Employee nhận task"]
+    C --> D["Employee cập nhật tiến độ"]
+    D --> E["Employee gửi hoàn thành"]
+    E --> F["Manager review task"]
+    F --> G{"Kết quả review"}
+    G -->|Duyệt| H["Task hoàn thành"]
+    G -->|Yêu cầu sửa| D
+    G -->|Từ chối| I["Task chưa đạt"]
+    H --> J["AI lấy dữ liệu task, chấm công, nghỉ phép"]
+    I --> J
+    J --> K["AI tính điểm năng lực"]
+    K --> L["AI nhận xét và đề xuất hành động"]
+    L --> M["Manager/HR duyệt kết quả cuối cùng"]
+```
+
 ### 10.7. Vì sao gọi là AI/Agentic AI?
 
 Hiện tại module này có thể gọi là:
@@ -607,10 +706,10 @@ Lý do:
 
 Nếu muốn gọi là **Agentic AI** mạnh hơn, nên bổ sung các bước:
 
-- AI tự phát hiện nhân viên cần theo dõi.
-- AI tạo kế hoạch hành động, ví dụ đào tạo, mentoring, cảnh báo đi trễ.
-- AI nhắc HR thực hiện hành động.
-- AI theo dõi kết quả tháng sau.
+- AI tự phát hiện nhân viên cần theo dõi dựa trên task, chấm công và nghỉ phép.
+- AI tạo kế hoạch hành động, ví dụ đào tạo, mentoring, cảnh báo task trễ, cảnh báo đi trễ.
+- AI nhắc Manager/HR thực hiện hành động.
+- AI theo dõi kết quả ở kỳ đánh giá sau.
 - AI giải thích lý do vì sao đưa ra khuyến nghị.
 
 Ví dụ luồng Agentic AI nâng cấp:
@@ -759,6 +858,9 @@ flowchart TD
 | attendance | Chấm công |
 | leave_requests | Đơn nghỉ phép |
 | salary | Bảng lương |
+| tasks | Task Manager giao cho nhân viên |
+| task_progress_logs | Lịch sử cập nhật tiến độ task của nhân viên |
+| task_reviews | Kết quả Manager review/chấm chất lượng task |
 | competency_reviews | Kết quả đánh giá năng lực nên bổ sung |
 | chat_sessions | Phiên chat nên bổ sung |
 | chat_messages | Tin nhắn chat nên bổ sung |
@@ -773,6 +875,9 @@ erDiagram
     employees ||--o{ attendance : has
     employees ||--o{ leave_requests : creates
     employees ||--o{ salary : receives
+    employees ||--o{ tasks : assigned
+    tasks ||--o{ task_progress_logs : has
+    tasks ||--o{ task_reviews : reviewed
     employees ||--o{ competency_reviews : evaluated
 ```
 
@@ -819,12 +924,44 @@ erDiagram
 - `month`
 - `year`
 - `attendance_score`
-- `performance_score`
-- `skill_score`
-- `discipline_score`
+- `task_performance_score`
+- `quality_skill_score`
+- `discipline_responsibility_score`
 - `total_score`
 - `rating`
 - `recommendation`
+
+`tasks`:
+
+- `task_id`
+- `title`
+- `description`
+- `assigned_by`
+- `assigned_to`
+- `department_id`
+- `deadline`
+- `priority`
+- `kpi_point`
+- `status`
+- `created_at`
+- `completed_at`
+
+`task_progress_logs`:
+
+- `task_id`
+- `employee_id`
+- `progress_percent`
+- `note`
+- `created_at`
+
+`task_reviews`:
+
+- `task_id`
+- `reviewed_by`
+- `quality_score`
+- `review_note`
+- `result`
+- `reviewed_at`
 
 ## 15. Các điểm chưa hợp HRM cần ưu tiên sửa
 
@@ -902,13 +1039,16 @@ erDiagram
 
 ### Kịch bản 4: Agentic AI đánh giá năng lực
 
-1. HR vào mục Đánh giá năng lực.
-2. Hệ thống lấy nhân viên đang làm việc.
-3. Hệ thống lấy dữ liệu chấm công tháng hiện tại.
-4. AI tính điểm chuyên cần, hiệu suất, kỹ năng, kỷ luật.
-5. AI xếp loại nhân viên.
-6. AI đưa nhận xét điểm mạnh, điểm cần cải thiện.
-7. HR dùng khuyến nghị để quyết định đào tạo, khen thưởng hoặc theo dõi.
+1. Manager giao task cho nhân viên trong phòng ban.
+2. Nhân viên nhận task và cập nhật tiến độ.
+3. Nhân viên gửi hoàn thành task.
+4. Manager review task, duyệt hoặc yêu cầu sửa, đồng thời chấm chất lượng.
+5. HR/Manager vào mục Đánh giá năng lực.
+6. AI lấy dữ liệu task, chấm công, nghỉ phép, phòng ban và chức vụ.
+7. AI tính điểm chuyên cần, hiệu suất task, kỹ năng/chất lượng, kỷ luật/trách nhiệm.
+8. AI xếp loại nhân viên.
+9. AI đưa nhận xét điểm mạnh, điểm cần cải thiện và đề xuất hành động.
+10. Manager/HR dùng khuyến nghị để quyết định đào tạo, khen thưởng hoặc theo dõi.
 
 Ý nghĩa nghiệp vụ: AI không thay HR ra quyết định, mà hỗ trợ HR có thêm căn cứ phân tích.
 
@@ -916,11 +1056,11 @@ erDiagram
 
 Có thể nói:
 
-> Hệ thống của nhóm em là một HRM gồm các nghiệp vụ quản lý nhân viên, nghỉ phép, chấm công, lương thưởng và đánh giá năng lực. Điểm khác biệt là hệ thống tích hợp module Agentic AI đánh giá năng lực. Module này tự tổng hợp dữ liệu nhân viên và chấm công, tính điểm theo các tiêu chí chuyên cần, hiệu suất, kỹ năng, kỷ luật, sau đó xếp loại và đưa ra khuyến nghị cho HR. Nhờ vậy HR có thêm cơ sở để ra quyết định đào tạo, khen thưởng hoặc theo dõi nhân viên.
+> Hệ thống của nhóm em là một HRM gồm các nghiệp vụ quản lý nhân viên, nghỉ phép, chấm công, lương thưởng và đánh giá năng lực. Điểm khác biệt là hệ thống tích hợp module Agentic AI đánh giá năng lực. Theo hướng nghiệp vụ mới, Manager sẽ giao task cho nhân viên, nhân viên cập nhật tiến độ, Manager review và chấm chất lượng task. Agentic AI sẽ tổng hợp dữ liệu task, chấm công, nghỉ phép, phòng ban và chức vụ để tính điểm chuyên cần, hiệu suất task, kỹ năng/chất lượng, kỷ luật/trách nhiệm. Sau đó AI xếp loại và đưa ra khuyến nghị cho Manager/HR. Nhờ vậy kết quả đánh giá có nguồn dữ liệu rõ ràng và vẫn có người quản lý xác nhận cuối cùng.
 
 Nếu giảng viên hỏi "AI ở đâu?", trả lời:
 
-> AI nằm ở module Đánh giá năng lực và AI Assistant. Trong bản hiện tại, AI được triển khai theo hướng rule-based: hệ thống tự phân tích dữ liệu HRM theo công thức và luật nghiệp vụ để đưa nhận xét. Nếu phát triển tiếp, module này có thể nâng cấp thành Agentic AI thật bằng cách tự tạo kế hoạch hành động, nhắc HR xử lý và theo dõi kết quả ở tháng sau.
+> AI nằm ở module Đánh giá năng lực và AI Assistant. Trong bản hiện tại, AI được triển khai theo hướng rule-based: hệ thống phân tích dữ liệu HRM theo công thức và luật nghiệp vụ để đưa nhận xét. Theo hướng phát triển mới, AI sẽ lấy thêm dữ liệu task do Manager giao, tiến độ nhân viên cập nhật và kết quả Manager review để đánh giá năng lực sát thực tế hơn. Nếu phát triển tiếp, module này có thể nâng cấp thành Agentic AI thật bằng cách tự phát hiện nhân viên cần hỗ trợ, đề xuất kế hoạch hành động, nhắc Manager/HR xử lý và theo dõi kết quả ở kỳ sau.
 
 ## 18. Kết luận
 

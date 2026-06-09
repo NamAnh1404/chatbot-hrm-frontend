@@ -321,6 +321,7 @@ export function EmployeeTable() {
   };
 
   const handleOpenEdit = (employee: EmployeeView) => {
+    setShowInactiveDialog(false);
     setSelectedEmployee(employee);
     setForm(toForm(employee));
     setShowEditDialog(true);
@@ -570,7 +571,7 @@ export function EmployeeTable() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="flex min-h-[calc(100vh-8rem)] flex-col gap-5 pb-24">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Quản lý nhân viên</h1>
@@ -598,24 +599,24 @@ export function EmployeeTable() {
         </div>
       )}
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card className="p-5">
-          <p className="text-sm text-gray-500">
+      <div className="grid gap-3 md:grid-cols-3">
+        <Card className="!gap-2 !px-4 !py-3">
+          <p className="text-xs text-gray-500">
             Tổng nhân viên {selectedScopeLabel && <strong className="text-gray-900">{selectedScopeLabel}</strong>}
           </p>
-          <p className="mt-1 text-3xl font-bold text-gray-900">{filteredEmployees.length}</p>
+          <p className="text-2xl font-bold text-gray-900">{filteredEmployees.length}</p>
         </Card>
-        <Card className="p-5">
-          <p className="text-sm text-gray-500">
+        <Card className="!gap-2 !px-4 !py-3">
+          <p className="text-xs text-gray-500">
             Quản lý {selectedScopeLabel && <strong className="text-gray-900">{selectedScopeLabel}</strong>}
           </p>
-          <p className="mt-1 text-3xl font-bold text-emerald-600">{scopedManagerCount}</p>
+          <p className="text-2xl font-bold text-emerald-600">{scopedManagerCount}</p>
         </Card>
-        <Card className="p-5">
-          <p className="text-sm text-gray-500">
+        <Card className="!gap-2 !px-4 !py-3">
+          <p className="text-xs text-gray-500">
             Tổng lương {selectedScopeLabel && <strong className="text-gray-900">{selectedScopeLabel}</strong>}
           </p>
-          <p className="mt-2 text-xl font-bold text-gray-900">{formatCurrency(scopedSalary)}</p>
+          <p className="text-lg font-bold text-gray-900">{formatCurrency(scopedSalary)}</p>
         </Card>
       </div>
 
@@ -647,18 +648,18 @@ export function EmployeeTable() {
       </Card>
 
       <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="hide-scrollbar overflow-x-auto">
           <table className="w-full min-w-[980px]">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">Nhân viên</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">Liên hệ</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">CCCD</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">Phòng ban</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">Chức vụ</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">Vai trò</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">Lương</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-600">Hành động</th>
+                <th className="px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-600">Nhân viên</th>
+                <th className="px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-600">Liên hệ</th>
+                <th className="px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-600">CCCD</th>
+                <th className="px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-600">Phòng ban</th>
+                <th className="px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-600">Chức vụ</th>
+                <th className="px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-600">Vai trò</th>
+                <th className="px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-600">Lương</th>
+                <th className="px-5 py-3 text-right text-xs font-bold uppercase tracking-wider text-gray-600">Hành động</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -720,7 +721,7 @@ export function EmployeeTable() {
         </div>
       </Card>
 
-      <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white px-5 py-4 md:flex-row md:items-center md:justify-between">
+      <div className="fixed bottom-0 left-0 right-0 z-40 flex flex-col gap-3 border border-gray-200 bg-white/95 px-5 py-3 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur md:flex-row md:items-center md:justify-between lg:left-64">
         <p className="text-sm text-gray-600">
           Hiển thị <span className="font-medium">{filteredEmployees.length === 0 ? 0 : startIndex + 1}-{Math.min(endIndex, filteredEmployees.length)}</span> trong tổng số{' '}
           <span className="font-medium">{filteredEmployees.length}</span> nhân viên
@@ -752,7 +753,7 @@ export function EmployeeTable() {
             <DialogTitle>Nhân viên đã nghỉ việc</DialogTitle>
             <DialogDescription>Danh sách này được tách riêng để màn hình chính tập trung vào nhân sự đang làm việc.</DialogDescription>
           </DialogHeader>
-          <div className="max-h-[420px] overflow-y-auto rounded-lg border border-gray-100">
+          <div className="hide-scrollbar max-h-[420px] overflow-y-auto rounded-lg border border-gray-100">
             {inactiveEmployees.length === 0 ? (
               <div className="p-6 text-center text-sm text-gray-500">Chưa có nhân viên đã nghỉ việc.</div>
             ) : (

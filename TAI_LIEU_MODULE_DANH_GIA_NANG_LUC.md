@@ -8,11 +8,15 @@ Module này không chỉ hiển thị thông tin nhân viên, mà còn tổng h�
 
 - Hồ sơ nhân viên
 - Chấm công
-- Hiệu suất làm việc
+- Task/công việc do Manager giao
+- Tiến độ và deadline task
+- Kết quả review task của Manager
 - Kỹ năng chuyên môn
 - Kỷ luật lao động
 
 Từ các dữ liệu đó, hệ thống tính điểm năng lực, xếp loại nhân viên và đưa ra nhận xét/đề xuất theo hướng Agentic AI.
+
+Điểm cập nhật quan trọng: hiệu suất không nên do AI tự suy đoán. Hiệu suất nên lấy từ **task do Manager giao**, sau đó nhân viên cập nhật tiến độ và Manager review/chấm chất lượng.
 
 ## 2. Vai trò trong đề tài
 
@@ -29,6 +33,13 @@ Hệ thống HRM thông thường chỉ quản lý dữ liệu như nhân viên,
 - Xếp loại nhân viên
 - Đưa ra nhận xét tự động
 - Gợi ý hướng đào tạo, khen thưởng hoặc theo dõi thêm
+
+Theo hướng nghiệp vụ mới, Agentic AI không hoạt động độc lập. AI cần dữ liệu từ Manager và Employee:
+
+- Manager giao task, deadline, độ ưu tiên.
+- Employee cập nhật tiến độ.
+- Manager review task, chấm chất lượng.
+- AI tổng hợp task với chấm công và nghỉ phép để đánh giá năng lực.
 
 ## 3. Các chức năng chính
 
@@ -56,9 +67,9 @@ Mỗi nhân viên được đánh giá dựa trên 4 nhóm điểm:
 | Nhóm điểm | Ý nghĩa |
 |---|---|
 | Chuyên cần | Đánh giá mức độ đi làm đầy đủ, đúng giờ |
-| Hiệu suất | Đánh giá khả năng hoàn thành công việc |
-| Kỹ năng | Đánh giá năng lực chuyên môn theo vị trí/phòng ban |
-| Kỷ luật | Đánh giá mức độ tuân thủ quy định, ít đi trễ/về sớm |
+| Hiệu suất task | Đánh giá khả năng hoàn thành task được Manager giao |
+| Kỹ năng/chất lượng | Đánh giá chất lượng đầu ra qua điểm review của Manager |
+| Kỷ luật/trách nhiệm | Đánh giá mức độ tuân thủ deadline, cập nhật tiến độ và quy định làm việc |
 
 ### 3.3. Xếp loại năng lực
 
@@ -89,9 +100,9 @@ Nếu nhân viên có điểm thấp ở một nhóm nào đó, hệ thống s�
 Ví dụ:
 
 - Nếu điểm chuyên cần thấp: cần cải thiện việc đi làm đúng giờ
-- Nếu điểm hiệu suất thấp: cần theo dõi KPI công việc
-- Nếu điểm kỹ năng thấp: cần đào tạo chuyên môn
-- Nếu điểm kỷ luật thấp: cần giảm vi phạm chấm công
+- Nếu điểm hiệu suất task thấp: cần theo dõi tiến độ task, hỗ trợ xử lý công việc
+- Nếu điểm kỹ năng/chất lượng thấp: cần đào tạo chuyên môn hoặc mentoring
+- Nếu điểm kỷ luật/trách nhiệm thấp: cần cải thiện việc cập nhật tiến độ, tuân thủ deadline và chấm công
 
 ### 3.6. AI đề xuất hành động nhân sự
 
@@ -141,22 +152,42 @@ Module này giúp HR:
 
 ## 5. Cách hoạt động tổng quan
 
-Luồng hoạt động tổng quát:
+Luồng hoạt động tổng quát theo hướng Manager giao task:
 
 ```text
-Dữ liệu HRM
+Manager giao task
+    |
+    |-- Chọn nhân viên
+    |-- Nhập task, deadline, độ ưu tiên
+    |
+    v
+Employee nhận task và cập nhật tiến độ
+    |
+    |-- Cập nhật phần trăm hoàn thành
+    |-- Gửi hoàn thành
+    |
+    v
+Manager review task
+    |
+    |-- Duyệt hoàn thành
+    |-- Yêu cầu sửa
+    |-- Chấm chất lượng task
+    |
+    v
+Dữ liệu HRM liên quan
     |
     |-- Hồ sơ nhân viên
     |-- Dữ liệu chấm công
+    |-- Dữ liệu nghỉ phép
     |-- Phòng ban, chức vụ
     |
     v
-Backend xử lý đánh giá năng lực
+Agentic AI xử lý đánh giá năng lực
     |
     |-- Tính điểm chuyên cần
-    |-- Tính điểm hiệu suất
-    |-- Tính điểm kỹ năng
-    |-- Tính điểm kỷ luật
+    |-- Tính điểm hiệu suất task
+    |-- Tính điểm kỹ năng/chất lượng
+    |-- Tính điểm kỷ luật/trách nhiệm
     |
     v
 Tính tổng điểm năng lực
@@ -171,7 +202,11 @@ Agentic AI tạo nhận xét và đề xuất
 Frontend hiển thị cho HR
 ```
 
+Luồng cũ trong code hiện tại vẫn đang ở mức rule-based demo. Luồng mới này là định hướng nghiệp vụ đúng hơn để hệ thống có nguồn dữ liệu đánh giá rõ ràng.
+
 ## 6. Luồng hoạt động chi tiết
+
+Các bước dưới đây mô tả hiện trạng module trong code. Phần mở rộng theo hướng Manager giao task được bổ sung sau đó để làm định hướng phát triển đúng nghiệp vụ hơn.
 
 ### Bước 1. HR mở màn hình Đánh giá năng lực
 
@@ -270,13 +305,23 @@ Nếu chuyên cần cao -> cộng điểm
 Nếu chuyên cần thấp -> trừ điểm
 ```
 
-Trong phiên bản nâng cấp, điểm hiệu suất có thể lấy từ:
+Trong phiên bản nâng cấp theo hướng Manager giao task, điểm hiệu suất nên lấy từ:
 
-- KPI
-- Số nhiệm vụ hoàn thành
+- Task do Manager giao
+- Số task hoàn thành
+- Tỷ lệ task đúng hạn
+- Phần trăm tiến độ
+- Task được Manager duyệt
 - Đánh giá của quản lý
-- Doanh số
-- Tiến độ công việc
+
+Công thức đề xuất:
+
+```text
+TaskPerformanceScore =
+    tỷ lệ task hoàn thành * 50%
+  + điểm đúng hạn * 30%
+  + điểm cập nhật tiến độ * 20%
+```
 
 ### Bước 6. Backend tính điểm kỹ năng
 
@@ -291,12 +336,19 @@ Nhân viên HR -> cộng điểm kỹ năng nghiệp vụ nhân sự
 Nhân viên Sales/Marketing -> cộng điểm kỹ năng theo nghiệp vụ
 ```
 
-Trong phiên bản nâng cấp, điểm kỹ năng có thể lấy từ:
+Trong phiên bản nâng cấp, điểm kỹ năng/chất lượng có thể lấy từ:
 
+- Điểm chất lượng task do Manager chấm
+- Nhận xét Manager sau khi review task
 - Bài test nội bộ
 - Chứng chỉ
 - Khóa đào tạo đã hoàn thành
-- Đánh giá 360 độ
+
+Công thức đề xuất:
+
+```text
+QualitySkillScore = trung bình quality_score của các task đã review
+```
 
 ### Bước 7. Backend tính điểm kỷ luật
 
@@ -310,6 +362,17 @@ Nếu có dữ liệu:
     điểm = 96
     trừ điểm theo số lần đi trễ, về sớm hoặc ngày công chưa hoàn thành
 ```
+
+Theo hướng Manager giao task, điểm kỷ luật/trách nhiệm cần tính thêm:
+
+```text
+Task quá hạn
+Task không cập nhật tiến độ
+Task bị từ chối hoàn thành
+Lỗi chấm công
+```
+
+Nếu nhân viên có nghỉ phép đã duyệt trong thời gian làm task, hệ thống không nên phạt deadline quá nặng.
 
 ### Bước 8. Backend tính tổng điểm năng lực
 
@@ -332,6 +395,16 @@ Kỹ năng: 80
 Kỷ luật: 95
 
 Tổng điểm = 90*0.3 + 85*0.35 + 80*0.2 + 95*0.15 = 87
+```
+
+Theo hướng mới, công thức đề xuất là:
+
+```text
+Tổng điểm =
+    Chuyên cần * 20%
+  + Hiệu suất task * 40%
+  + Kỹ năng/chất lượng * 25%
+  + Kỷ luật/trách nhiệm * 15%
 ```
 
 ### Bước 9. Backend xếp loại nhân viên
@@ -393,6 +466,25 @@ Frontend hiển thị:
 - Điểm cần cải thiện
 - Đề xuất Agentic AI
 
+### Luồng mở rộng theo hướng Manager giao task
+
+```text
+1. Manager mở màn Nhân viên phòng ban.
+2. Manager chọn một nhân viên và tạo task.
+3. Manager nhập tên task, mô tả, deadline, độ ưu tiên và điểm KPI/task point.
+4. Employee nhận thông báo task mới ở giao diện nhân viên.
+5. Employee cập nhật tiến độ theo phần trăm và ghi chú công việc.
+6. Employee gửi yêu cầu hoàn thành khi task đạt 100%.
+7. Manager review task, chấm chất lượng và chọn duyệt/yêu cầu sửa/từ chối.
+8. Agentic AI lấy dữ liệu task, chấm công, nghỉ phép, phòng ban và chức vụ.
+9. AI tính điểm chuyên cần, hiệu suất task, kỹ năng/chất lượng, kỷ luật/trách nhiệm.
+10. AI tạo nhận xét, điểm mạnh, điểm cần cải thiện và đề xuất hành động.
+11. Manager/HR duyệt kết quả cuối cùng.
+12. Hệ thống lưu lịch sử đánh giá.
+```
+
+Luồng này hợp lý hơn vì Manager có vai trò trực tiếp trong đánh giá, Employee không tự quyết định kết quả, còn AI có nguồn dữ liệu rõ ràng để phân tích.
+
 ## 7. API của module
 
 ### 7.1. Lấy danh sách đánh giá năng lực
@@ -426,6 +518,30 @@ GET /api/admin/competency/1/analyze?month=6&year=2026
 ```
 
 Trả về nhận xét AI chi tiết cho nhân viên có `employeeId = 1`.
+
+### 7.4. API đề xuất cho hướng Manager giao task
+
+Nếu triển khai theo luồng mới, cần bổ sung các nhóm API:
+
+```http
+GET    /api/manager/employees
+GET    /api/manager/tasks
+POST   /api/manager/tasks
+PUT    /api/manager/tasks/{id}
+POST   /api/manager/tasks/{id}/review
+```
+
+```http
+GET    /api/employee/tasks
+POST   /api/employee/tasks/{id}/progress
+POST   /api/employee/tasks/{id}/submit
+```
+
+```http
+GET    /api/manager/competency?startDate=...&endDate=...
+GET    /api/manager/competency/{employeeId}/analyze?startDate=...&endDate=...
+POST   /api/manager/competency/{employeeId}/approve
+```
 
 ## 8. Các file đã triển khai
 

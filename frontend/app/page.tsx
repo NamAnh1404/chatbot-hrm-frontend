@@ -86,7 +86,7 @@ export default function App() {
           />
 
           {/* Page Content */}
-          <main className="flex-1 overflow-y-auto">
+          <main className="hide-scrollbar flex-1 overflow-y-auto">
             <div className="container mx-auto px-4 py-8">
               {renderEmployeePage()}
             </div>
@@ -141,7 +141,7 @@ export default function App() {
         />
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="hide-scrollbar flex-1 overflow-y-auto">
           <div className="container mx-auto px-4 py-8">
             {renderAdminPage()}
           </div>

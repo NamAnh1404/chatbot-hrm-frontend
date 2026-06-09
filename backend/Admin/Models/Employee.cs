@@ -13,7 +13,7 @@ namespace Admin.Models
         public string Email { get; set; } = null!;
 
         [Column("password")]
-        public string Password { get; set; } = null!;
+        public string? Password { get; set; }
 
         [Column("role")]
         public string Role { get; set; } = "EMPLOYEE";
